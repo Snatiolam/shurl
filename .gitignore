@@ -1,0 +1,16 @@
+bin/
+
+.env
+.env*
+
+vendor/
+go.work
+go.work.sum
+coverage.out
+
+*.swp
+*.swo
+*~
+
+.DS_Store
+Thumbs.db
