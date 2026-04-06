@@ -6,7 +6,7 @@ all: build
 
 build: clean
 	@mkdir -p $(BIN_DIR)
-	go build -o $(CLI_BINARY) ./cmd/cli/main.go
+	go build -v -o $(CLI_BINARY) ./cmd/cli/main.go
 	@echo "Binaries generated"
 
 clean:
