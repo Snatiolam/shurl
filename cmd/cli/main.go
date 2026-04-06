@@ -23,13 +23,22 @@ func ConnectDB(ctx context.Context, connString string) (*pgx.Conn, error) {
 	return conn, nil
 }
 
-func InsertURL(ctx context.Context, conn *pgx.Conn, url string) (int, error) {
+func GetOrInsertURL(ctx context.Context, conn *pgx.Conn, url string) (int, *string, error) {
 	var id int
-	err := conn.QueryRow(ctx, `INSERT INTO urls (long_url) VALUES ($1) RETURNING id`, url).Scan(&id)
+	var shortKey *string
+
+	query := `
+		INSERT INTO urls (long_url)
+		VALUES ($1)
+		ON CONFLICT (long_url) DO UPDATE
+		SET long_url = EXCLUDED.long_url
+		RETURNING id, short_key
+	`
+	err := conn.QueryRow(ctx, query, url).Scan(&id, &shortKey)
 	if err != nil {
-		return -1, err
+		return -1, nil, err
 	}
-	return id, nil
+	return id, shortKey, nil
 }
 
 func EncodeBase62(num int) string {
@@ -83,17 +92,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	id, err := InsertURL(ctx, conn, url)
+	id, existingShortKey, err := GetOrInsertURL(ctx, conn, url)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	shortKey := EncodeBase62(id)
-	if err := UpdateRecord(ctx, conn, id, shortKey); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+	var finalShortKey string
+	if existingShortKey != nil {
+		finalShortKey = *existingShortKey
+	} else {
+		finalShortKey = EncodeBase62(id)
+		if err := UpdateRecord(ctx, conn, id, finalShortKey); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
-	fmt.Printf("URL: https://localhost:8080/%v\n", EncodeBase62(id))
+	fmt.Printf("URL: https://localhost:8080/%v\n", finalShortKey)
 }
