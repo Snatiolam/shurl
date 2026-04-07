@@ -1,5 +1,6 @@
 BIN_DIR=bin
 CLI_BINARY=$(BIN_DIR)/shortener-cli
+SERVER_BINARY=$(BIN_DIR)/shortener-server
 
 .PHONY: all
 all: build
@@ -7,6 +8,7 @@ all: build
 build: clean
 	@mkdir -p $(BIN_DIR)
 	go build -v -o $(CLI_BINARY) ./cmd/cli/main.go
+	go build -v -o $(SERVER_BINARY) ./cmd/server/main.go
 	@echo "Binaries generated"
 
 clean:

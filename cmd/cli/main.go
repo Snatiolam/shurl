@@ -47,5 +47,5 @@ func main() {
 		}
 	}
 
-	fmt.Printf("URL: https://localhost:8080/%v\n", finalShortKey)
+	fmt.Printf("URL: http://localhost:8080/%v\n", finalShortKey)
 }

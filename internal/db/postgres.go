@@ -45,3 +45,12 @@ func UpdateRecord(ctx context.Context, conn *pgx.Conn, id int, shortKey string) 
 	}
 	return nil
 }
+
+func GetURLFromShortKey(ctx context.Context, conn *pgx.Conn, shortKey string) (string, error) {
+	var url string
+	err := conn.QueryRow(ctx, `SELECT long_url FROM urls WHERE short_key = $1`, shortKey).Scan(&url)
+	if err != nil {
+		return "", err
+	}
+	return url, nil
+}
