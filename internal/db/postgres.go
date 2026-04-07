@@ -5,7 +5,14 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+type Querier interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
 
 func ConnectDB(ctx context.Context, connString string) (*pgx.Conn, error) {
 	conn, err := pgx.Connect(ctx, connString)
@@ -20,7 +27,7 @@ func ConnectDB(ctx context.Context, connString string) (*pgx.Conn, error) {
 	return conn, nil
 }
 
-func GetOrInsertURL(ctx context.Context, conn *pgx.Conn, url string) (int, *string, error) {
+func GetOrInsertURL(ctx context.Context, conn Querier, url string) (int, *string, error) {
 	var id int
 	var shortKey *string
 
@@ -38,7 +45,7 @@ func GetOrInsertURL(ctx context.Context, conn *pgx.Conn, url string) (int, *stri
 	return id, shortKey, nil
 }
 
-func UpdateRecord(ctx context.Context, conn *pgx.Conn, id int, shortKey string) error {
+func UpdateRecord(ctx context.Context, conn Querier, id int, shortKey string) error {
 	_, err := conn.Exec(ctx, `UPDATE urls SET short_key = $1 WHERE id = $2`, shortKey, id)
 	if err != nil {
 		return err
@@ -46,7 +53,7 @@ func UpdateRecord(ctx context.Context, conn *pgx.Conn, id int, shortKey string) 
 	return nil
 }
 
-func GetURLFromShortKey(ctx context.Context, conn *pgx.Conn, shortKey string) (string, error) {
+func GetURLFromShortKey(ctx context.Context, conn Querier, shortKey string) (string, error) {
 	var url string
 	err := conn.QueryRow(ctx, `SELECT long_url FROM urls WHERE short_key = $1`, shortKey).Scan(&url)
 	if err != nil {
